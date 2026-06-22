@@ -1,0 +1,38 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>清华教师评价 Demo</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <div id="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">TH</span>
+        <div>
+          <strong>清华教师评价</strong>
+          <small>Rate Demo</small>
+        </div>
+      </div>
+      <nav class="nav">
+        <button data-route="main" class="nav-item active">学院与教师</button>
+        <button data-route="upload" class="nav-item">上传信息</button>
+        <button data-route="logs" class="nav-item">系统日志</button>
+      </nav>
+      <div class="login-state" id="login-state"></div>
+    </aside>
+
+    <main class="workspace">
+      <section id="login-module" class="module"></section>
+      <section id="main-module" class="module hidden"></section>
+      <section id="upload-module" class="module hidden"></section>
+      <section id="detail-module" class="module hidden"></section>
+      <section id="logs-module" class="module hidden"></section>
+    </main>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
