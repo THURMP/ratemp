@@ -7,6 +7,7 @@ const AUTH_KEY = "thu-rate-demo-auth";
 
 let clientPromise;
 let lastBackend = "local";
+let lastRemoteError = "";
 
 function read(key, fallback) {
   const raw = localStorage.getItem(key);
@@ -32,21 +33,33 @@ async function withRemote(action, fallback) {
   const supabase = await getSupabase();
   if (!supabase) {
     lastBackend = "local";
+    lastRemoteError = "Supabase is not configured.";
     return fallback();
   }
+
   try {
     const value = await action(supabase);
     lastBackend = "supabase";
+    lastRemoteError = "";
     return value;
   } catch (error) {
-    console.warn("Supabase unavailable, using localStorage fallback.", error);
     lastBackend = "local";
+    lastRemoteError = error?.message || String(error);
+    console.warn("Supabase unavailable, using localStorage fallback.", error);
     return fallback();
   }
 }
 
 export function getBackendLabel() {
-  return lastBackend === "supabase" ? "Supabase 云端数据库" : "浏览器 localStorage";
+  return lastBackend === "supabase" ? "Supabase cloud database" : "Browser localStorage";
+}
+
+export function getRemoteStatus() {
+  return {
+    configured: isSupabaseConfigured(),
+    backend: lastBackend,
+    error: lastRemoteError
+  };
 }
 
 export async function initStore() {
@@ -98,7 +111,7 @@ export async function getTeachers() {
           .map((review) => ({
             score: Number(review.score),
             text: review.text,
-            author: review.author || "匿名学生",
+            author: review.author || "Anonymous student",
             date: review.date
           }))
       }));
@@ -128,17 +141,23 @@ export async function addTeacher(payload) {
     id: `t-${Date.now()}`,
     name: payload.name,
     college: payload.college,
-    title: payload.title || "待补充",
-    email: payload.email || "待补充",
-    research: payload.research || "待补充",
-    intro: payload.intro || "暂无介绍"
+    title: payload.title || "To be added",
+    email: payload.email || "To be added",
+    research: payload.research || "To be added",
+    intro: payload.intro || "No introduction yet"
   };
-  const review = { score: Number(payload.score), text: payload.review, author: "匿名学生", date: today() };
+  const review = {
+    score: Number(payload.score),
+    text: payload.review,
+    author: "Anonymous student",
+    date: today()
+  };
 
   return withRemote(
     async (supabase) => {
       const { error: teacherError } = await supabase.from("teachers").insert(teacher);
       if (teacherError) throw teacherError;
+
       const { error: reviewError } = await supabase.from("reviews").insert({
         teacher_id: teacher.id,
         score: review.score,
@@ -147,7 +166,8 @@ export async function addTeacher(payload) {
         date: review.date
       });
       if (reviewError) throw reviewError;
-      await addLog(`新增教师：${teacher.college} - ${teacher.name}，初始评分 ${payload.score}`);
+
+      await addLog(`Added teacher: ${teacher.college} - ${teacher.name}, initial score ${payload.score}`);
       return { ...teacher, reviews: [review] };
     },
     () => {
@@ -155,7 +175,7 @@ export async function addTeacher(payload) {
       const savedTeacher = { ...teacher, reviews: [review] };
       teachers.push(savedTeacher);
       saveLocalTeachers(teachers);
-      addLog(`新增教师：${teacher.college} - ${teacher.name}，初始评分 ${payload.score}`);
+      addLocalLog(`Added teacher: ${teacher.college} - ${teacher.name}, initial score ${payload.score}`);
       return savedTeacher;
     }
   );
@@ -168,21 +188,27 @@ export async function addReview(teacherId, review) {
         teacher_id: teacherId,
         score: Number(review.score),
         text: review.text,
-        author: "匿名学生",
+        author: "Anonymous student",
         date: today()
       });
       if (error) throw error;
+
       const teacher = await getTeacher(teacherId);
-      await addLog(`新增评价：${teacher?.name || teacherId}，评分 ${review.score}`);
+      await addLog(`Added review: ${teacher?.name || teacherId}, score ${review.score}`);
       return teacher;
     },
     () => {
       const teachers = getLocalTeachers();
       const teacher = teachers.find((item) => item.id === teacherId);
       if (!teacher) return null;
-      teacher.reviews.push({ score: Number(review.score), text: review.text, author: "匿名学生", date: today() });
+      teacher.reviews.push({
+        score: Number(review.score),
+        text: review.text,
+        author: "Anonymous student",
+        date: today()
+      });
       saveLocalTeachers(teachers);
-      addLog(`新增评价：${teacher.name}，评分 ${review.score}`);
+      addLocalLog(`Added review: ${teacher.name}, score ${review.score}`);
       return teacher;
     }
   );
@@ -212,12 +238,14 @@ export async function addLog(message) {
       });
       if (error) throw error;
     },
-    () => {
-      const logs = getLocalLogs();
-      logs.unshift({ time: new Date().toLocaleString("zh-CN", { hour12: false }), message });
-      write(LOGS_KEY, logs.slice(0, 80));
-    }
+    () => addLocalLog(message)
   );
+}
+
+function addLocalLog(message) {
+  const logs = getLocalLogs();
+  logs.unshift({ time: new Date().toLocaleString("zh-CN", { hour12: false }), message });
+  write(LOGS_KEY, logs.slice(0, 80));
 }
 
 function today() {

@@ -1,10 +1,14 @@
-import { getBackendLabel, getLogs, getTeachers } from "../../services/storage.js";
+import { getBackendLabel, getLogs, getRemoteStatus, getTeachers } from "../../services/storage.js";
 
 export async function renderLogs(root) {
   root.innerHTML = `<div class="empty">正在读取系统日志...</div>`;
   const logs = await getLogs();
   const teachers = await getTeachers();
+  const remoteStatus = getRemoteStatus();
   const reviewCount = teachers.reduce((total, teacher) => total + teacher.reviews.length, 0);
+  const statusText = remoteStatus.configured
+    ? (remoteStatus.backend === "supabase" ? "已连接 Supabase" : `未连接 Supabase：${remoteStatus.error}`)
+    : "未填写 Supabase URL 和 anon key";
 
   root.innerHTML = `
     <div class="page-head">
@@ -19,6 +23,7 @@ export async function renderLogs(root) {
         <div class="stat-line"><strong>教师数量</strong><span>${teachers.length}</span></div>
         <div class="stat-line"><strong>评价数量</strong><span>${reviewCount}</span></div>
         <div class="stat-line"><strong>存储方式</strong><span>${getBackendLabel()}</span></div>
+        <div class="stat-line"><strong>云端状态</strong><span>${statusText}</span></div>
         <div class="stat-line"><strong>模块结构</strong><span>login / main / upload / detail / logs / services / data</span></div>
       </div>
       <div class="panel">
