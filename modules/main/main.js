@@ -1,8 +1,6 @@
 import { averageScore, getColleges, getTeachers } from "../../services/storage.js";
 import { ratingStars } from "../shared/rating.js";
 
-const LARGE_COLLEGE_THRESHOLD = 50;
-
 export async function renderMain(root, state, navigate) {
   root.innerHTML = `<div class="empty">正在读取教师数据...</div>`;
   const colleges = await getColleges();
@@ -13,9 +11,8 @@ export async function renderMain(root, state, navigate) {
   const collegeTeachers = selectedCollege
     ? teachers.filter((teacher) => teacher.college === selectedCollege)
     : [];
-  const isLargeCollege = collegeTeachers.length > LARGE_COLLEGE_THRESHOLD;
   const departments = getDepartments(collegeTeachers);
-  const showDepartments = selectedCollege && isLargeCollege && !selectedDepartment && !keyword;
+  const showDepartments = Boolean(selectedCollege && !selectedDepartment && !keyword);
   const visibleTeachers = getVisibleTeachers({
     teachers,
     selectedCollege,
@@ -27,7 +24,7 @@ export async function renderMain(root, state, navigate) {
     <div class="page-head">
       <div>
         <h1>学院与教师</h1>
-        <p>按学院浏览教师；人数较多的学院会先按系或方向分类。</p>
+        <p>先选择学院，再按系或方向进入教师名单。</p>
       </div>
       <button class="btn red" id="go-upload">上传新教师</button>
     </div>
@@ -46,7 +43,7 @@ export async function renderMain(root, state, navigate) {
           <option value="">选择学院</option>
           ${colleges.map((college) => `<option value="${college}" ${college === selectedCollege ? "selected" : ""}>${college}</option>`).join("")}
         </select>
-        ${selectedCollege && isLargeCollege ? `
+        ${selectedCollege ? `
           <select id="department-select">
             <option value="">全部系/方向</option>
             ${departments.map((department) => `<option value="${department.name}" ${department.name === selectedDepartment ? "selected" : ""}>${department.name}</option>`).join("")}
@@ -63,10 +60,10 @@ export async function renderMain(root, state, navigate) {
     button.addEventListener("click", () => navigate("main", { college: button.dataset.college, department: "", keyword: "" }));
   });
   root.querySelector("#college-select")?.addEventListener("change", (event) => {
-    navigate("main", { college: event.target.value, department: "", keyword });
+    navigate("main", { college: event.target.value, department: "", keyword: "" });
   });
   root.querySelector("#department-select")?.addEventListener("change", (event) => {
-    navigate("main", { college: selectedCollege, department: event.target.value, keyword });
+    navigate("main", { college: selectedCollege, department: event.target.value, keyword: "" });
   });
   root.querySelector("#keyword")?.addEventListener("input", (event) => {
     navigate("main", { college: selectedCollege, department: selectedDepartment, keyword: event.target.value });
@@ -92,7 +89,7 @@ function renderContent({ selectedCollege, showDepartments, departments, visibleT
             <h3>${department.name}</h3>
             <p class="meta">${department.count} 位教师</p>
           </button>
-        `).join("")}
+        `).join("") || `<div class="empty">该学院暂无系/方向数据。</div>`}
       </div>
     `;
   }
