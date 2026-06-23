@@ -2,10 +2,10 @@ create table if not exists teachers (
   id text primary key,
   name text not null,
   college text not null,
-  title text not null default '待补充',
-  email text not null default '待补充',
-  research text not null default '待补充',
-  intro text not null default '暂无介绍',
+  title text not null default 'To be added',
+  email text not null default 'To be added',
+  research text not null default 'To be added',
+  intro text not null default 'No introduction yet',
   created_at timestamptz not null default now()
 );
 
@@ -14,7 +14,7 @@ create table if not exists reviews (
   teacher_id text not null references teachers(id) on delete cascade,
   score numeric not null check (score >= 1 and score <= 5),
   text text not null,
-  author text not null default '匿名学生',
+  author text not null default 'Anonymous student',
   date date not null default current_date,
   created_at timestamptz not null default now()
 );
@@ -28,21 +28,21 @@ create table if not exists system_logs (
 
 insert into teachers (id, name, college, title, email, research, intro)
 values
-  ('t-automation-chen', '陈教授', '自动化系', '教授', 'chen@example.tsinghua.edu.cn', '智能控制、机器学习与系统建模', '课程结构清晰，重视基础推导和工程实践。'),
-  ('t-cs-li', '李教授', '计算机科学与技术系', '副教授', 'li@example.tsinghua.edu.cn', '数据库系统、数据管理与云计算', '课堂案例丰富，适合想做系统方向的同学。'),
-  ('t-ee-wang', '王教授', '电子工程系', '教授', 'wang@example.tsinghua.edu.cn', '信号处理、通信系统与智能感知', '理论要求高，课堂板书细致。')
+  ('t-automation-chen', 'Professor Chen', 'Department of Automation', 'Professor', 'chen@example.tsinghua.edu.cn', 'Intelligent control, machine learning, system modeling', 'Clear course structure with emphasis on fundamentals and practice.'),
+  ('t-cs-li', 'Professor Li', 'Department of Computer Science and Technology', 'Associate Professor', 'li@example.tsinghua.edu.cn', 'Database systems, data management, cloud computing', 'Rich classroom examples, suitable for students interested in systems.'),
+  ('t-ee-wang', 'Professor Wang', 'Department of Electronic Engineering', 'Professor', 'wang@example.tsinghua.edu.cn', 'Signal processing, communication systems, intelligent sensing', 'Theory-focused lectures with detailed board work.')
 on conflict (id) do nothing;
 
 insert into reviews (teacher_id, score, text, author, date)
 values
-  ('t-automation-chen', 4.7, '讲课节奏稳定，作业有挑战但反馈及时。', '匿名学生', '2026-06-20'),
-  ('t-cs-li', 4.4, '项目训练很实用，期末复习范围明确。', '匿名学生', '2026-06-19'),
-  ('t-ee-wang', 4.2, '考试偏重理解，建议认真跟每周习题。', '匿名学生', '2026-06-18');
+  ('t-automation-chen', 4.7, 'Steady lecture pace, challenging assignments, and timely feedback.', 'Anonymous student', '2026-06-20'),
+  ('t-cs-li', 4.4, 'The project is practical and the final review scope is clear.', 'Anonymous student', '2026-06-19'),
+  ('t-ee-wang', 4.2, 'Exams focus on understanding. Follow the weekly exercises carefully.', 'Anonymous student', '2026-06-18');
 
 insert into system_logs (time, message)
 values
-  ('2026-06-22 09:00', 'Supabase 云端数据库初始化完成。'),
-  ('2026-06-22 09:05', '教师、评价和系统日志表已创建。');
+  ('2026-06-22 09:00', 'Supabase cloud database initialized.'),
+  ('2026-06-22 09:05', 'Teachers, reviews, and system logs tables created.');
 
 alter table teachers enable row level security;
 alter table reviews enable row level security;
