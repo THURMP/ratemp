@@ -7,7 +7,7 @@ export async function renderUpload(root, navigate) {
     <div class="page-head">
       <div>
         <h1>上传教师信息</h1>
-        <p>学生可补充教师基础信息、评分和第一条评价。</p>
+        <p>学生可补充教师基础信息和评分；评语可以之后再补充。</p>
       </div>
     </div>
     <form class="panel" id="upload-form">
@@ -23,7 +23,7 @@ export async function renderUpload(root, navigate) {
           <div class="field"><label>研究方向</label><input name="research" placeholder="例如：人工智能、系统安全" /></div>
           <div class="field"><label>基本介绍</label><textarea name="intro" placeholder="简短介绍教师风格、课程或研究方向"></textarea></div>
           <div class="field"><label>评分（1-5）</label><input name="score" type="number" min="1" max="5" step="0.1" required placeholder="4.5" /></div>
-          <div class="field"><label>评语</label><textarea name="review" required placeholder="请写下真实、具体、尊重的评价"></textarea></div>
+          <div class="field"><label>评语（可选）</label><textarea name="review" placeholder="可补充真实、具体、尊重的评价"></textarea></div>
         </div>
       </div>
       <div class="actions">

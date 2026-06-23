@@ -30,8 +30,8 @@ export async function renderDetail(root, state, navigate) {
       <form class="panel" id="review-form">
         <h2>追加评价</h2>
         <div class="field"><label>评分（1-5）</label><input name="score" type="number" min="1" max="5" step="0.1" required /></div>
-        <div class="field"><label>评语</label><textarea name="text" required placeholder="补充你的课程体验或建议"></textarea></div>
-        <button class="btn red" type="submit">提交评价</button>
+        <div class="field"><label>评语（可选）</label><textarea name="text" placeholder="可补充你的课程体验或建议"></textarea></div>
+        <button class="btn red" type="submit">提交评分</button>
       </form>
     </div>
     <div class="panel" style="margin-top:18px">
@@ -43,14 +43,14 @@ export async function renderDetail(root, state, navigate) {
               ${ratingStars(review.score)}
               <span class="meta">${review.author} · ${review.date}</span>
             </div>
-            <p>${review.text}</p>
+            <p>${review.text || "未填写评语"}</p>
           </article>
-        `).join("")}
+        `).join("") || `<div class="empty">暂无评分。</div>`}
       </div>
     </div>
   `;
 
-  root.querySelector("#back-main").addEventListener("click", () => navigate("main", { college: teacher.college }));
+  root.querySelector("#back-main").addEventListener("click", () => navigate("main", { college: teacher.college, department: teacher.research }));
   root.querySelector("#review-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     const data = Object.fromEntries(new FormData(event.currentTarget).entries());

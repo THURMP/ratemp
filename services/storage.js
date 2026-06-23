@@ -148,7 +148,7 @@ export async function addTeacher(payload) {
   };
   const review = {
     score: Number(payload.score),
-    text: payload.review,
+    text: normalizeReviewText(payload.review),
     author: "Anonymous student",
     date: today()
   };
@@ -187,7 +187,7 @@ export async function addReview(teacherId, review) {
       const { error } = await supabase.from("reviews").insert({
         teacher_id: teacherId,
         score: Number(review.score),
-        text: review.text,
+        text: normalizeReviewText(review.text),
         author: "Anonymous student",
         date: today()
       });
@@ -203,7 +203,7 @@ export async function addReview(teacherId, review) {
       if (!teacher) return null;
       teacher.reviews.push({
         score: Number(review.score),
-        text: review.text,
+        text: normalizeReviewText(review.text),
         author: "Anonymous student",
         date: today()
       });
@@ -250,4 +250,9 @@ function addLocalLog(message) {
 
 function today() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function normalizeReviewText(value) {
+  const text = String(value || "").trim();
+  return text || "未填写评语";
 }
