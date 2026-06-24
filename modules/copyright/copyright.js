@@ -1,0 +1,40 @@
+export function renderCopyright(root) {
+  root.innerHTML = `
+    <div class="page-head">
+      <div>
+        <h1>版权与关于</h1>
+        <p>清华教师评价 Demo 的项目说明、作者信息与使用边界。</p>
+      </div>
+    </div>
+
+    <div class="about-layout">
+      <section class="panel about-panel">
+        <span class="section-kicker">Project Origin</span>
+        <h2>项目初衷</h2>
+        <p>
+          项目起源于交换时看到的美国 Rate My Professors 网站。在清华经历了很多好老师，
+          可惜无缘给学弟学妹们推荐。作为打破信息差的一次尝试，希望各位大佬们多多指教！
+        </p>
+      </section>
+
+      <section class="panel about-panel">
+        <span class="section-kicker">Contact</span>
+        <h2>作者联系方式</h2>
+        <p>作者邮箱：<a href="mailto:gyliang060823@gmail.com">gyliang060823@gmail.com</a></p>
+        <p class="meta">欢迎反馈数据问题、页面建议、功能需求和安全漏洞。</p>
+      </section>
+
+      <section class="panel about-panel wide">
+        <span class="section-kicker">Copyright</span>
+        <h2>版权声明</h2>
+        <p>
+          本网站为课程交流与信息整理用途的非商业 Demo。教师公开信息主要来自学校及院系公开页面，
+          学生评价内容来自用户自愿提交。请在使用时保持真实、克制、尊重，不发布人身攻击、隐私信息或未经证实的指控。
+        </p>
+        <p>
+          如发现信息错误、内容不当或希望移除相关内容，请通过上方邮箱联系作者。
+        </p>
+      </section>
+    </div>
+  `;
+}
