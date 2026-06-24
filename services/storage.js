@@ -5,6 +5,7 @@ const TEACHERS_KEY = "thu-rate-demo-teachers";
 const LOGS_KEY = "thu-rate-demo-logs";
 const AUTH_KEY = "thu-rate-demo-auth";
 const PENDING_KEY = "thu-rate-demo-pending-teachers";
+const DEV_KEY = "thu-rate-demo-dev-key";
 
 let clientPromise;
 let lastBackend = "local";
@@ -20,11 +21,25 @@ function write(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+function getDevKey() {
+  return sessionStorage.getItem(DEV_KEY) || "";
+}
+
+function setDevKey(value) {
+  if (value) sessionStorage.setItem(DEV_KEY, value);
+  else sessionStorage.removeItem(DEV_KEY);
+  clientPromise = null;
+}
+
 async function getSupabase() {
   if (!isSupabaseConfigured()) return null;
   if (!clientPromise) {
     clientPromise = import("https://esm.sh/@supabase/supabase-js@2").then(({ createClient }) => (
-      createClient(supabaseConfig.url, supabaseConfig.anonKey)
+      createClient(supabaseConfig.url, supabaseConfig.anonKey, {
+        global: {
+          headers: getDevKey() ? { "x-developer-key": getDevKey() } : {}
+        }
+      })
     ));
   }
   return clientPromise;
@@ -238,24 +253,28 @@ export async function addLog(message) {
   );
 }
 
-export async function devSignIn(email, password) {
+export async function devSignIn(key) {
+  const cleanKey = String(key || "").trim();
+  if (!cleanKey) throw new Error("请输入开发者密钥。");
+
+  setDevKey(cleanKey);
   const supabase = await requireSupabase();
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) throw error;
-  await addLog(`Developer signed in: ${email}`);
-  return data.session;
+  const { error } = await supabase.from("pending_teachers").select("id").limit(1);
+  if (error) {
+    setDevKey("");
+    throw new Error("密钥无效，或数据库尚未启用 key 登录策略。");
+  }
+
+  await addLog("Developer signed in with access key");
+  return { label: "Key verified" };
 }
 
 export async function devSignOut() {
-  const supabase = await requireSupabase();
-  await supabase.auth.signOut();
+  setDevKey("");
 }
 
 export async function getDevSession() {
-  const supabase = await getSupabase();
-  if (!supabase) return null;
-  const { data } = await supabase.auth.getSession();
-  return data.session;
+  return getDevKey() ? { label: "Key verified" } : null;
 }
 
 export async function getPendingTeachers() {

@@ -1,3 +1,5 @@
+create extension if not exists pgcrypto;
+
 create table if not exists teachers (
   id text primary key,
   name text not null,
@@ -40,28 +42,48 @@ create table if not exists pending_teachers (
   created_at timestamptz not null default now()
 );
 
-insert into teachers (id, name, college, title, email, research, intro)
-values
-  ('t-automation-chen', 'Professor Chen', 'Department of Automation', 'Professor', 'chen@example.tsinghua.edu.cn', 'Intelligent control, machine learning, system modeling', 'Clear course structure with emphasis on fundamentals and practice.'),
-  ('t-cs-li', 'Professor Li', 'Department of Computer Science and Technology', 'Associate Professor', 'li@example.tsinghua.edu.cn', 'Database systems, data management, cloud computing', 'Rich classroom examples, suitable for students interested in systems.'),
-  ('t-ee-wang', 'Professor Wang', 'Department of Electronic Engineering', 'Professor', 'wang@example.tsinghua.edu.cn', 'Signal processing, communication systems, intelligent sensing', 'Theory-focused lectures with detailed board work.')
-on conflict (id) do nothing;
+create table if not exists developer_keys (
+  id text primary key,
+  key_hash text not null,
+  created_at timestamptz not null default now()
+);
 
-insert into reviews (teacher_id, score, text, author, date)
-values
-  ('t-automation-chen', 4.7, 'Steady lecture pace, challenging assignments, and timely feedback.', 'Anonymous student', '2026-06-20'),
-  ('t-cs-li', 4.4, 'The project is practical and the final review scope is clear.', 'Anonymous student', '2026-06-19'),
-  ('t-ee-wang', 4.2, 'Exams focus on understanding. Follow the weekly exercises carefully.', 'Anonymous student', '2026-06-18');
+-- Run this once after replacing change-this-developer-key with your private developer login key.
+insert into developer_keys (id, key_hash)
+values ('primary', crypt('change-this-developer-key', gen_salt('bf')))
+on conflict (id) do update set key_hash = excluded.key_hash;
+
+create or replace function public.is_developer_key()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from developer_keys
+    where key_hash = crypt(
+      coalesce((current_setting('request.headers', true)::json ->> 'x-developer-key'), ''),
+      key_hash
+    )
+  );
+$$;
+
+revoke all on function public.is_developer_key() from public;
+grant execute on function public.is_developer_key() to anon, authenticated;
 
 insert into system_logs (time, message)
 values
   ('2026-06-22 09:00', 'Supabase cloud database initialized.'),
-  ('2026-06-22 09:05', 'Teachers, reviews, and system logs tables created.');
+  ('2026-06-22 09:05', 'Teachers, reviews, and system logs tables created.')
+on conflict do nothing;
 
 alter table teachers enable row level security;
 alter table reviews enable row level security;
 alter table system_logs enable row level security;
 alter table pending_teachers enable row level security;
+alter table developer_keys enable row level security;
 
 drop policy if exists "public read teachers" on teachers;
 drop policy if exists "public insert teachers" on teachers;
@@ -81,19 +103,19 @@ drop policy if exists "developer update pending teachers" on pending_teachers;
 drop policy if exists "developer delete pending teachers" on pending_teachers;
 
 create policy "public read teachers" on teachers for select using (true);
-create policy "developer insert teachers" on teachers for insert to authenticated with check (true);
-create policy "developer update teachers" on teachers for update to authenticated using (true) with check (true);
-create policy "developer delete teachers" on teachers for delete to authenticated using (true);
+create policy "developer insert teachers" on teachers for insert with check (public.is_developer_key());
+create policy "developer update teachers" on teachers for update using (public.is_developer_key()) with check (public.is_developer_key());
+create policy "developer delete teachers" on teachers for delete using (public.is_developer_key());
 
 create policy "public read reviews" on reviews for select using (true);
 create policy "public insert reviews" on reviews for insert with check (true);
-create policy "developer update reviews" on reviews for update to authenticated using (true) with check (true);
-create policy "developer delete reviews" on reviews for delete to authenticated using (true);
+create policy "developer update reviews" on reviews for update using (public.is_developer_key()) with check (public.is_developer_key());
+create policy "developer delete reviews" on reviews for delete using (public.is_developer_key());
 
-create policy "developer read logs" on system_logs for select to authenticated using (true);
+create policy "developer read logs" on system_logs for select using (public.is_developer_key());
 create policy "public insert logs" on system_logs for insert with check (true);
 
 create policy "public insert pending teachers" on pending_teachers for insert with check (status = 'pending');
-create policy "developer read pending teachers" on pending_teachers for select to authenticated using (true);
-create policy "developer update pending teachers" on pending_teachers for update to authenticated using (true) with check (true);
-create policy "developer delete pending teachers" on pending_teachers for delete to authenticated using (true);
+create policy "developer read pending teachers" on pending_teachers for select using (public.is_developer_key());
+create policy "developer update pending teachers" on pending_teachers for update using (public.is_developer_key()) with check (public.is_developer_key());
+create policy "developer delete pending teachers" on pending_teachers for delete using (public.is_developer_key());

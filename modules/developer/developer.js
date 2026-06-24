@@ -24,7 +24,7 @@ export async function renderDeveloper(root, navigate) {
     renderDeveloperLogin(root, navigate);
     return;
   }
-  await renderDeveloperDashboard(root, navigate, session.user.email);
+  await renderDeveloperDashboard(root, navigate, session.label);
 }
 
 function renderDeveloperLogin(root, navigate) {
@@ -33,16 +33,19 @@ function renderDeveloperLogin(root, navigate) {
       <div class="page-head">
         <div>
           <h1>开发者登录</h1>
-          <p>使用 Supabase Auth 开发者账号进入审核与数据维护后台。</p>
+          <p>输入开发者密钥进入审核与数据维护后台。</p>
         </div>
       </div>
       <form id="dev-login-form">
-        <div class="field"><label>邮箱</label><input name="email" type="email" required autocomplete="email" /></div>
-        <div class="field"><label>密码</label><input name="password" type="password" required autocomplete="current-password" /></div>
+        <div class="field">
+          <label>开发者密钥</label>
+          <input name="key" type="password" required autocomplete="current-password" />
+        </div>
         <div class="actions">
           <button class="btn red" type="submit">登录后台</button>
           <button class="btn secondary" type="button" id="back-main">返回主页</button>
         </div>
+        <p class="hint">密钥只保存在当前浏览器，用于本次后台请求校验。</p>
         <p class="error" id="dev-login-error"></p>
       </form>
     </div>
@@ -53,15 +56,15 @@ function renderDeveloperLogin(root, navigate) {
     event.preventDefault();
     const form = Object.fromEntries(new FormData(event.currentTarget).entries());
     try {
-      await devSignIn(form.email, form.password);
+      await devSignIn(form.key);
       await renderDeveloper(root, navigate);
     } catch (error) {
-      root.querySelector("#dev-login-error").textContent = error.message || "登录失败";
+      root.querySelector("#dev-login-error").textContent = error.message || "密钥无效";
     }
   });
 }
 
-async function renderDeveloperDashboard(root, navigate, email) {
+async function renderDeveloperDashboard(root, navigate, label) {
   const [pending, teachers, reviews, logs] = await Promise.all([
     getPendingTeachers(),
     getTeachers(),
@@ -73,7 +76,7 @@ async function renderDeveloperDashboard(root, navigate, email) {
     <div class="page-head">
       <div>
         <h1>开发者后台</h1>
-        <p>${escapeText(email)} · 审核上传、维护教师信息、管理评论和查看系统日志。</p>
+        <p>${escapeText(label)} · 审核上传、维护教师信息、管理评论和查看系统日志。</p>
       </div>
       <button class="btn secondary" id="dev-signout">退出后台</button>
     </div>
